@@ -19,34 +19,24 @@ package com.example.android.kotlinktxworkshop
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
-import androidx.lifecycle.asLiveData
-import androidx.lifecycle.lifecycleScope
-import com.example.android.myktxlibrary.awaitLastLocation
-import com.example.android.myktxlibrary.findAndSetText
-import com.example.android.myktxlibrary.hasPermission
-import com.example.android.myktxlibrary.locationFlow
-import com.example.android.myktxlibrary.showLocation
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.conflate
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.launch
+import com.example.android.myktxlibrary.*
+import com.example.android.kotlinktxworkshop.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        startUpdatingLocation()
+
+        val binding = ActivityMainBinding.inflate(layoutInflater).apply {
+            lifecycleOwner = this@MainActivity
+            location = viewModel.locationLiveData
+        }
+
+        setContentView(binding.root)
     }
 
     override fun onStart() {
@@ -54,34 +44,6 @@ class MainActivity : AppCompatActivity() {
         if (!hasPermission(ACCESS_FINE_LOCATION)) {
             requestPermissions(arrayOf(ACCESS_FINE_LOCATION), 0)
         }
-
-        lifecycleScope.launch {
-            getLastKnownLocation()
-        }
-    }
-
-    private suspend fun getLastKnownLocation() {
-        try {
-            val lastLocation = fusedLocationClient.awaitLastLocation()
-            showLocation(R.id.textView, lastLocation)
-        } catch (e: Exception) {
-            findAndSetText(R.id.textView, "Unable to get location.")
-            Log.d(TAG, "Unable to get location", e)
-        }
-    }
-
-    private fun startUpdatingLocation() {
-        fusedLocationClient.locationFlow()
-            .conflate()
-            .catch { e ->
-                findAndSetText(R.id.textView, "Unable to get location.")
-                Log.d(TAG, "Unable to get location", e)
-            }
-            .asLiveData()
-            .observe(this, Observer { location ->
-                showLocation(R.id.textView, location)
-                Log.d(TAG, location.toString())
-            })
     }
 
     override fun onRequestPermissionsResult(

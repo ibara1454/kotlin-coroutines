@@ -40,7 +40,7 @@ fun Location.asString(format: Int = Location.FORMAT_DEGREES): String {
     return "Location is: $latitude, $longitude"
 }
 
-suspend fun FusedLocationProviderClient.awaitLastLocation(): Location =
+suspend fun FusedLocationProviderClient.awaitLastLocation(): Location? =
     suspendCancellableCoroutine { continuation ->
         lastLocation.addOnSuccessListener { location ->
             continuation.resume(location)
